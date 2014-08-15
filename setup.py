@@ -4,6 +4,9 @@ from setuptools import setup
 with open('requirements.txt') as f:
     requirements = [l.strip() for l in f]
 
+with open('README.rst') as f:
+    long_desc = f.read().strip()
+
 setup(
     name='PyTestlink',
     version='0.1',
@@ -12,8 +15,8 @@ setup(
     author='Gregory Eric Sanderson',
     author_email='gregory.eric.sanderson@gmail.com',
     description='Minimal library for accessing a testlink database',
+    long_description=long_desc,
     packages=['testlink'],
-    package_dir={'testlink': 'testlink'},
     zip_safe=False,
     include_package_data=True,
     platforms='any',
