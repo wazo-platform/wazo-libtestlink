@@ -52,7 +52,7 @@ class Build(object):
         self.database = database
         self.project = project
         self._id = None
-        self._name = None
+        self._version = None
 
     @property
     def id(self):
@@ -61,10 +61,10 @@ class Build(object):
         return self._id
 
     @property
-    def name(self):
-        if not self._name:
+    def version(self):
+        if not self._version:
             self.refresh()
-        return self._name
+        return self._version
 
     def refresh(self):
         query = """
@@ -85,8 +85,8 @@ class Build(object):
         """
 
         row = self.database.row(query, project=self.project)
-        self._id = row[1]
-        self._name = row[2]
+        self._id = row[0]
+        self._version = row[1]
 
 
 db = None
