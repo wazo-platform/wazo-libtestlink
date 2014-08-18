@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+import os.path
+import argparse
+from ConfigParser import ConfigParser
+
+from testlink import setup, dao, report
+
+DEFAULT_FORMAT = 'html'
+DEFAULT_CONFIG = os.path.expanduser('~/.testlink')
+
+parser = argparse.ArgumentParser(description='generate a testlink report')
+parser.add_argument('output', help='output file')
+parser.add_argument('-f', '--format', default=DEFAULT_FORMAT,
+                    help='file format (default: {})'.format(DEFAULT_FORMAT))
+parser.add_argument('-c', '--config', default=DEFAULT_CONFIG,
+                    help='configuration file (default: {})'.format(DEFAULT_CONFIG))
+
+
+def main():
+    args = parser.parse_args()
+    config = load_config(args.config)
+    setup(host=config.get('testlink', 'host'),
+          port=config.get('testlink', 'port'),
+          database=config.get('testlink', 'database'),
+          user=config.get('testlink', 'username'),
+          password=config.get('testlink', 'password'),
+          project=config.get('testlink', 'project'))
+
+    report_data = dao.manual_test_report()
+    rendered_report = report.generate_report(report_data, args.format)
+
+    with open(args.output, 'w') as f:
+        f.write(rendered_report)
+
+    print("Report generated at {}".format(args.output))
+
+
+def load_config(filepath):
+    config = ConfigParser()
+    config.read(filepath)
+    if not config.has_section('testlink'):
+        print("ERROR: config not found !")
+        sys.exit(1)
+    return config
+
+
+if __name__ == '__main__':
+    main()
