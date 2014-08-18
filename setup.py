@@ -21,6 +21,7 @@ setup(
     include_package_data=True,
     platforms='any',
     install_requires=requirements,
+    scripts=['bin/testlink_report'],
     classifiers=[
         # see http://pypi.python.org/pypi?:action=list_classifiers
         # -*- Classifiers -*-
