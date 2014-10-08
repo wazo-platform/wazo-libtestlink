@@ -443,6 +443,64 @@ def manual_test_report():
             'tests': tests}
 
 
+def all_logs(timestamp=None):
+    query = cte('path_tree', 'latest_executions') + """
+    SELECT
+        path_tree.name                      AS folder,
+        tcversions.tc_external_id           AS number,
+        parent.name                         AS name,
+        (CASE executions.status
+        WHEN 'p' THEN 'passed'
+        WHEN 'f' THEN 'failed'
+        WHEN 'b' THEN 'blocked'
+        ELSE executions.status
+        END)                                AS status,
+        executions.execution_ts             AS timestamp,
+        users.first                         AS firstname,
+        users.last                          AS lastname,
+        users.first || ' ' || users.last    AS user
+    FROM
+        executions
+        INNER JOIN latest_executions
+            ON executions.tcversion_id = latest_executions.tcversion_id
+            AND executions.execution_ts = latest_executions.execution_ts
+        INNER JOIN users
+            ON executions.tester_id = users.id
+        INNER JOIN builds
+            ON builds.id = executions.build_id
+        INNER JOIN tcversions
+            ON executions.tcversion_id = tcversions.id
+            INNER JOIN nodes_hierarchy node
+                ON tcversions.id = node.id
+                INNER JOIN nodes_hierarchy parent
+                    ON node.parent_id = parent.id
+                    LEFT OUTER JOIN path_tree
+                        ON parent.parent_id = path_tree.id
+    WHERE
+        builds.id = %(build_id)s
+        AND executions.execution_type = 1
+    """
+
+    if timestamp:
+        query += "AND executions.execution_ts >= %(timestamp)s"
+
+    query += """
+    ORDER BY
+        executions.execution_ts ASC
+    """
+
+    with db.transaction():
+        rows = db.rows(query, build_id=build.id, timestamp=timestamp)
+        return tuple({'folder': row[0],
+                      'number': row[1],
+                      'name': row[2],
+                      'status': row[3],
+                      'timestamp': row[4],
+                      'firstname': row[5],
+                      'lastname': row[6],
+                      'user': row[7]} for row in rows)
+
+
 def group_executions_by_folder(rows):
     report = []
     key = lambda row: row[0]
