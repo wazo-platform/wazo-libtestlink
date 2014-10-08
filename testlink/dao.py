@@ -92,6 +92,65 @@ class Build(object):
 db = None
 build = None
 
+CTE = {
+    'latest_executions': """
+        latest_executions AS
+        (
+            SELECT
+                executions.tcversion_id AS tcversion_id,
+                MAX(executions.execution_ts) AS execution_ts
+            FROM
+                executions
+            GROUP BY
+                executions.tcversion_id
+        )
+    """,
+    'latest_executed': """
+        latest_executed AS
+        (
+            SELECT
+                executions.tester_id            AS tester_id,
+                MAX(executions.execution_ts)    AS execution_ts
+            FROM
+                executions
+            GROUP BY
+                executions.tester_id
+        )
+    """,
+    'path_tree': """
+        RECURSIVE path_tree(id, name) AS
+        (
+            SELECT
+                parent.id,
+                CAST(parent.name as varchar(200)) as name
+            FROM
+                nodes_hierarchy parent
+            WHERE
+                parent.parent_id = (
+                    SELECT testplans.testproject_id
+                    FROM builds
+                    INNER JOIN testplans ON builds.testplan_id = testplans.id
+                    WHERE builds.id = %(build_id)s
+                )
+            UNION ALL
+            SELECT
+                child.id,
+                CAST(path_tree.name || '/' || child.name as varchar(200)) as name
+            FROM
+                path_tree
+                INNER JOIN nodes_hierarchy child
+                    ON path_tree.id = child.parent_id
+                    AND child.node_type_id = 2
+        )
+    """
+}
+
+
+def cte(*tables):
+    query = "WITH\n"
+    query += ",\n".join(CTE[t] for t in tables)
+    return query
+
 
 def setup(**kwargs):
     global db
@@ -127,18 +186,7 @@ def total_manual_tests():
 
 
 def test_statuses():
-    query = """
-    WITH latest_executions AS
-    (
-    SELECT
-        executions.tcversion_id AS tcversion_id,
-        MAX(executions.execution_ts) AS execution_ts
-    FROM
-        executions
-    GROUP BY
-        executions.tcversion_id
-    )
-
+    query = cte('latest_executions') + """
     SELECT
         (CASE executions.status
          WHEN 'p' THEN 'passed'
@@ -174,18 +222,7 @@ def test_statuses():
 
 
 def tests_for_status(status):
-    query = """
-    WITH latest_executions AS
-    (
-    SELECT
-        executions.tcversion_id         AS tcversion_id,
-        MAX(executions.execution_ts)    AS execution_ts
-    FROM
-        executions
-    GROUP BY
-        executions.tcversion_id
-    )
-
+    query = cte('latest_executions') + """
     SELECT
         tcversions.tc_external_id       AS number,
         parent.name                     AS name,
@@ -230,18 +267,7 @@ def blocked_tests():
 
 
 def executed_per_person():
-    query = """
-    WITH latest_executions AS
-    (
-    SELECT
-        executions.tcversion_id         AS tcversion_id,
-        MAX(executions.execution_ts)    AS execution_ts
-    FROM
-        executions
-    GROUP BY
-        executions.tcversion_id
-    )
-
+    query = cte('latest_executions') + """
     SELECT
         users.first || ' ' || users.last    AS name,
         (CASE executions.status
@@ -318,18 +344,7 @@ def path_for_test(tcversion_id):
 
 
 def path_per_person():
-    query = """
-    WITH latest_executed AS
-    (
-    SELECT
-        executions.tester_id            AS tester_id,
-        MAX(executions.execution_ts)    AS execution_ts
-    FROM
-        executions
-    GROUP BY
-        executions.tester_id
-    )
-
+    query = cte('latest_executed') + """
     SELECT
         users.first || ' ' || users.last    AS name,
         executions.tcversion_id             AS tcversion_id
@@ -385,43 +400,9 @@ def dashboard():
 
 
 def manual_test_report():
-    query = """
-    WITH RECURSIVE tree(id, name) AS
-    (
-        SELECT
-            parent.id,
-            CAST(parent.name as varchar(200)) as name
-        FROM
-            nodes_hierarchy parent
-        WHERE
-            parent.parent_id = (
-                SELECT testplans.testproject_id
-                FROM builds
-                INNER JOIN testplans ON builds.testplan_id = testplans.id
-                WHERE builds.id = %(build_id)s
-            )
-        UNION ALL
-        SELECT
-            child.id,
-            CAST(tree.name || '/' || child.name as varchar(200)) as name
-        FROM
-            tree
-            INNER JOIN nodes_hierarchy child
-                ON tree.id = child.parent_id
-                AND child.node_type_id = 2
-    ),
-    latest_executions AS
-    (
-        SELECT
-            executions.tcversion_id AS tcversion_id,
-            MAX(executions.execution_ts) AS execution_ts
-        FROM
-            executions
-        GROUP BY
-            executions.tcversion_id
-    )
+    query = cte('path_tree', 'latest_executions') + """
     SELECT
-        tree.name                           AS folder,
+        path_tree.name                      AS folder,
         tcversions.tc_external_id           AS number,
         parent.name                         AS name,
         tcversions.version                  AS version,
@@ -444,13 +425,13 @@ def manual_test_report():
                 ON tcversions.id = node.id
                 INNER JOIN nodes_hierarchy parent
                     ON node.parent_id = parent.id
-                    LEFT OUTER JOIN tree
+                    LEFT OUTER JOIN path_tree
                         ON parent.parent_id = tree.id
     WHERE
         builds.id = %(build_id)s
         AND executions.execution_type = 1
     ORDER BY
-        tree.name ASC,
+        path_tree.name ASC,
         parent.node_order DESC
     """
 
