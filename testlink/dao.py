@@ -426,7 +426,7 @@ def manual_test_report():
                 INNER JOIN nodes_hierarchy parent
                     ON node.parent_id = parent.id
                     LEFT OUTER JOIN path_tree
-                        ON parent.parent_id = tree.id
+                        ON parent.parent_id = path_tree.id
     WHERE
         builds.id = %(build_id)s
         AND executions.execution_type = 1
