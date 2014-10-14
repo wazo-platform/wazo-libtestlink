@@ -5,6 +5,59 @@ from contextlib import contextmanager
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
+CTE = {
+    'latest_executions': """
+        latest_executions AS
+        (
+            SELECT
+                executions.tcversion_id AS tcversion_id,
+                MAX(executions.execution_ts) AS execution_ts
+            FROM
+                executions
+            GROUP BY
+                executions.tcversion_id
+        )
+    """,
+    'latest_executed': """
+        latest_executed AS
+        (
+            SELECT
+                executions.tester_id            AS tester_id,
+                MAX(executions.execution_ts)    AS execution_ts
+            FROM
+                executions
+            GROUP BY
+                executions.tester_id
+        )
+    """,
+    'path_tree': """
+        RECURSIVE path_tree(id, name) AS
+        (
+            SELECT
+                parent.id,
+                CAST(parent.name as varchar(200)) as name
+            FROM
+                nodes_hierarchy parent
+            WHERE
+                parent.parent_id = (
+                    SELECT testplans.testproject_id
+                    FROM builds
+                    INNER JOIN testplans ON builds.testplan_id = testplans.id
+                    WHERE builds.id = %(build_id)s
+                )
+            UNION ALL
+            SELECT
+                child.id,
+                CAST(path_tree.name || '/' || child.name as varchar(200)) as name
+            FROM
+                path_tree
+                INNER JOIN nodes_hierarchy child
+                    ON path_tree.id = child.parent_id
+                    AND child.node_type_id = 2
+        )
+    """
+}
+
 
 class Database(object):
 
@@ -91,59 +144,6 @@ class Build(object):
 
 db = None
 build = None
-
-CTE = {
-    'latest_executions': """
-        latest_executions AS
-        (
-            SELECT
-                executions.tcversion_id AS tcversion_id,
-                MAX(executions.execution_ts) AS execution_ts
-            FROM
-                executions
-            GROUP BY
-                executions.tcversion_id
-        )
-    """,
-    'latest_executed': """
-        latest_executed AS
-        (
-            SELECT
-                executions.tester_id            AS tester_id,
-                MAX(executions.execution_ts)    AS execution_ts
-            FROM
-                executions
-            GROUP BY
-                executions.tester_id
-        )
-    """,
-    'path_tree': """
-        RECURSIVE path_tree(id, name) AS
-        (
-            SELECT
-                parent.id,
-                CAST(parent.name as varchar(200)) as name
-            FROM
-                nodes_hierarchy parent
-            WHERE
-                parent.parent_id = (
-                    SELECT testplans.testproject_id
-                    FROM builds
-                    INNER JOIN testplans ON builds.testplan_id = testplans.id
-                    WHERE builds.id = %(build_id)s
-                )
-            UNION ALL
-            SELECT
-                child.id,
-                CAST(path_tree.name || '/' || child.name as varchar(200)) as name
-            FROM
-                path_tree
-                INNER JOIN nodes_hierarchy child
-                    ON path_tree.id = child.parent_id
-                    AND child.node_type_id = 2
-        )
-    """
-}
 
 
 def cte(*tables):
