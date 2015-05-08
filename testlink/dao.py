@@ -5,6 +5,17 @@ from contextlib import contextmanager
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
+LOG_COLUMNS = ('folder',
+               'number',
+               'version',
+               'name',
+               'status',
+               'timestamp',
+               'notes',
+               'firstname',
+               'lastname',
+               'user')
+
 
 class Database(object):
 
@@ -331,7 +342,7 @@ def log_journal(latest=False, timestamp=None, status=None,
                 sort='timestamp', order='asc'):
 
     conditions = _build_where(timestamp, status)
-    order_by = 'ORDER BY {} {}'.format(sort, order)
+    order_by = _build_order_by(sort, order)
 
     query = log_cte(latest=latest)
     query += "SELECT * FROM log_journal" + conditions + order_by
@@ -341,15 +352,8 @@ def log_journal(latest=False, timestamp=None, status=None,
                        build_id=build.id,
                        timestamp=timestamp,
                        status=status)
-        return tuple({'folder': row[0],
-                      'number': row[1],
-                      'version': row[2],
-                      'name': row[3],
-                      'status': row[4],
-                      'timestamp': row[5],
-                      'firstname': row[6],
-                      'lastname': row[7],
-                      'user': row[8]} for row in rows)
+        return tuple({col: row[pos] for pos, col in enumerate(LOG_COLUMNS)}
+                     for row in rows)
 
 
 def _build_where(timestamp, status):
@@ -360,8 +364,18 @@ def _build_where(timestamp, status):
         conditions.append("status = %(status)s")
 
     if conditions:
-        return "WHERE " + " AND ".join(conditions)
+        return " WHERE " + " AND ".join(conditions)
     return ""
+
+
+def _build_order_by(sort, order):
+    if sort not in LOG_COLUMNS:
+        raise Exception("unknown column '{}'".format(sort))
+
+    if order not in ('asc', 'desc'):
+        raise Exception("unknown order '{}'".format(order))
+
+    return ' ORDER BY {} {}'.format(sort, order)
 
 
 def manual_test_report():
