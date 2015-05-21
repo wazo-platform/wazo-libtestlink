@@ -165,6 +165,7 @@ def log_cte(latest=True, folder_order=False):
             ON executions.tester_id = users.id
         INNER JOIN builds
             ON builds.id = executions.build_id
+            AND builds.id = %(build_id)s
         INNER JOIN tcversions
             ON executions.tcversion_id = tcversions.id
             INNER JOIN nodes_hierarchy node
