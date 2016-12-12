@@ -1,3 +1,9 @@
+wazo-libtestlink (1.0) xivo-dev; urgency=medium
+
+  * Rename xivo to wazo
+
+ -- Wazo Maintainers <dev.wazo@gmail.com>  Mon, 12 Dec 2016 11:44:28 -0500
+
 python-testlink (0.1-1) dev; urgency=low
 
   * Initial release of package

@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016 The Wazo Authors  (see AUTHORS file)
+# SPDX-License-Identifier: GPL-3.0+
+
 from __future__ import unicode_literals
 
 import itertools
@@ -23,7 +27,7 @@ def generate_report(report, output='html'):
 def generate_rst(report):
     lines = []
 
-    title = 'Test report for XiVO {version}'.format(version=report['version'])
+    title = 'Test report for Wazo {version}'.format(version=report['version'])
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     timestamp = 'Report generated at {date}'.format(date=now)
 

@@ -4,4 +4,4 @@ port = 5432
 database = testlink
 username = testlink
 password = password
-project = XiVO Software
+project = Wazo Software

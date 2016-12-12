@@ -1,16 +1,18 @@
-Source: python-testlink
+Source: wazo-libtestlink
 Section: python
 Priority: optional
-Maintainer: Gregory Eric Sanderson <gregory.eric.sanderson@gmail.com>
-Uploaders: Gregory Eric Sanderson <gregory.eric.sanderson@gmail.com>
+Maintainer: Wazo Maintainers <dev.wazo@gmail.com>
 Build-Depends: debhelper (>= 8), dh-python, python-all (>= 2.7), python-setuptools, python-psycopg2, python-docutils
-Standards-Version: 3.9.4
+Standards-Version: 3.9.6
 X-Python-Version: >= 2.7
-Homepage: https://github.com/gelendir/pytestlink
+Homepage: https://github.com/wazo-pbx/wazo-libtestlink
 
-Package: python-testlink
+Package: wazo-libtestlink
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
+Replaces: python-testlink
+Conflicts: python-testlink
+Provides: python-testlink
 Description: Minimal library used for accessing a testlink database.
  Provides methods for listing tests that need to be executed in a test plan
  and generating a report on the tests that have been run.
