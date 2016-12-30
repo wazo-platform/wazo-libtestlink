@@ -2,10 +2,9 @@ Source: wazo-libtestlink
 Section: python
 Priority: optional
 Maintainer: Wazo Maintainers <dev.wazo@gmail.com>
-Build-Depends: debhelper (>= 8), dh-python, python-all (>= 2.7), python-setuptools, python-psycopg2, python-docutils
+Build-Depends: debhelper (>= 9), dh-python, python-all (>= 2.7), python-setuptools, python-psycopg2, python-docutils
 Standards-Version: 3.9.6
 X-Python-Version: >= 2.7
-Homepage: https://github.com/wazo-pbx/wazo-libtestlink
 
 Package: wazo-libtestlink
 Architecture: all

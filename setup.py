@@ -10,10 +10,10 @@ with open('README.rst') as f:
 setup(
     name='PyTestlink',
     version='0.1',
-    url='http://github.com/gelendir/pytestlink',
+    url='http://wazo.community',
     license='GPL3',
-    author='Gregory Eric Sanderson',
-    author_email='gregory.eric.sanderson@gmail.com',
+    author='Wazo Authors',
+    author_email='dev.wazo@gmail.com',
     description='Minimal library for accessing a testlink database',
     long_description=long_desc,
     packages=['testlink'],
