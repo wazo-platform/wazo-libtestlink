@@ -17,7 +17,7 @@ LOG_COLUMNS = ('folder',
                'user')
 
 
-class Database(object):
+class Database:
 
     def __init__(self, host, port, database, user, password):
         self.connection = psycopg2.connect(host=host,
@@ -38,8 +38,7 @@ class Database(object):
 
     def rows(self, query, **params):
         cursor = self._cursor_for_query(query, params)
-        for row in cursor:
-            yield row
+        yield from cursor
         cursor.close()
 
     def _cursor_for_query(self, query, params):
@@ -57,7 +56,7 @@ class Database(object):
             raise
 
 
-class Build(object):
+class Build:
 
     def __init__(self, project, database):
         self.database = database
@@ -237,7 +236,7 @@ def test_statuses():
 
     rows = db.rows(query, build_id=build.id)
     statuses = {'passed': 0, 'failed': 0, 'blocked': 0}
-    statuses.update(dict((key, value) for key, value in rows))
+    statuses.update({key: value for key, value in rows})
 
     return statuses
 
@@ -252,7 +251,7 @@ def tests_for_status(status):
 
     rows = db.rows(query, build_id=build.id, status=status)
 
-    tests = [{'name': "X-%s: %s" % (row[0], row[1]),
+    tests = [{'name': f"X-{row[0]}: {row[1]}",
               'notes': row[2].strip()}
              for row in rows]
 
@@ -371,12 +370,12 @@ def _build_where(timestamp, status):
 
 def _build_order_by(sort, order):
     if sort not in LOG_COLUMNS:
-        raise Exception("unknown column '{}'".format(sort))
+        raise Exception(f"unknown column '{sort}'")
 
     if order not in ('asc', 'desc'):
-        raise Exception("unknown order '{}'".format(order))
+        raise Exception(f"unknown order '{order}'")
 
-    return ' ORDER BY {} {}'.format(sort, order)
+    return f' ORDER BY {sort} {order}'
 
 
 def manual_test_report():
